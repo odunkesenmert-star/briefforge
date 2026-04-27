@@ -44,6 +44,95 @@ Return a JSON object with this shape:
 
 
 SHEET_METAL_RULES = {
+    "tolerance_classes_iso_2768": {
+        "unit": "mm",
+        "ISO_2768-f": [
+            {"range": "0.5-3", "tolerance": "±0.05"},
+            {"range": ">3-6", "tolerance": "±0.05"},
+            {"range": ">6-30", "tolerance": "±0.10"},
+            {"range": ">30-120", "tolerance": "±0.15"},
+            {"range": ">120-400", "tolerance": "±0.20"},
+            {"range": ">400-1000", "tolerance": "±0.30"},
+            {"range": ">1000-2000", "tolerance": "±0.50"},
+        ],
+        "ISO_2768-m": [
+            {"range": "0.5-3", "tolerance": "±0.10"},
+            {"range": ">3-6", "tolerance": "±0.10"},
+            {"range": ">6-30", "tolerance": "±0.20"},
+            {"range": ">30-120", "tolerance": "±0.30"},
+            {"range": ">120-400", "tolerance": "±0.50"},
+            {"range": ">400-1000", "tolerance": "±0.80"},
+            {"range": ">1000-2000", "tolerance": "±1.20"},
+        ],
+        "ISO_2768-c": [
+            {"range": "0.5-3", "tolerance": "±0.20"},
+            {"range": ">3-6", "tolerance": "±0.30"},
+            {"range": ">6-30", "tolerance": "±0.50"},
+            {"range": ">30-120", "tolerance": "±0.80"},
+            {"range": ">120-400", "tolerance": "±1.20"},
+            {"range": ">400-1000", "tolerance": "±2.00"},
+            {"range": ">1000-2000", "tolerance": "±3.00"},
+        ],
+    },
+    "surface_finish_rules": {
+        "raw": {
+            "compatible_materials": ["S235", "S304", "Al5083"],
+            "minimum_thickness_mm": {
+                "S235": 1.0,
+                "S304": 0.8,
+                "Al5083": 1.2,
+            },
+            "notes": [
+                "No coating build-up allowance required.",
+                "Deburr and edge-break still required for handling safety.",
+            ],
+        },
+        "painted": {
+            "compatible_materials": ["S235", "S304", "Al5083"],
+            "minimum_thickness_mm": {
+                "S235": 1.0,
+                "S304": 1.0,
+                "Al5083": 1.2,
+            },
+            "notes": [
+                "Surface cleaning and primer compatibility check required.",
+                "Mask functional contact or grounding surfaces when needed.",
+            ],
+        },
+        "galvanized": {
+            "compatible_materials": ["S235"],
+            "minimum_thickness_mm": {
+                "S235": 2.0,
+            },
+            "notes": [
+                "Typically not applied to S304 and Al5083 in this rule set.",
+                "Vent/drain holes required for hot-dip galvanizing geometry.",
+            ],
+        },
+        "powder_coated": {
+            "compatible_materials": ["S235", "S304", "Al5083"],
+            "minimum_thickness_mm": {
+                "S235": 1.0,
+                "S304": 1.0,
+                "Al5083": 1.5,
+            },
+            "notes": [
+                "Account for coating thickness on fit-critical interfaces.",
+                "Use pre-treatment suitable for stainless and aluminum grades.",
+            ],
+        },
+        "electroplated": {
+            "compatible_materials": ["S235", "S304"],
+            "minimum_thickness_mm": {
+                "S235": 0.8,
+                "S304": 0.8,
+            },
+            "notes": [
+                "Al5083 requires special process route; excluded by default.",
+                "Hydrogen embrittlement mitigation may be required for high-strength steels.",
+            ],
+        },
+    },
     "minimum_bend_radius": {
         "unit": "x_thickness",
         "S235": {"value": 1.0, "rule": "r_min >= 1.0 * t"},

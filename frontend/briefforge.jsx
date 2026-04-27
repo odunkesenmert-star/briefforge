@@ -79,9 +79,23 @@ export default function BriefForge() {
     }
   }
 
+  function handleNewBrief() {
+    setInput("");
+    setChatHistory([]);
+    setChatResult("");
+    setBriefResult(null);
+    setMarkdownResult("");
+    setError("");
+  }
+
   return (
     <div style={{ maxWidth: 960, margin: "24px auto", fontFamily: "sans-serif" }}>
-      <h1>BriefForge</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h1>BriefForge</h1>
+        <button disabled={loading} onClick={handleNewBrief}>
+          New Brief
+        </button>
+      </div>
       <p>Sheet metal engineering briefing agent</p>
 
       <textarea
