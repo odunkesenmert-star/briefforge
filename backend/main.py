@@ -36,6 +36,7 @@ claude_client = ClaudeClient()
 
 
 class ChatRequest(BaseModel):
+    history: list[dict[str, str]] = Field(default_factory=list)
     message: str = Field(..., min_length=1)
 
 
@@ -67,7 +68,7 @@ def health() -> Dict[str, str]:
 @app.post("/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest) -> ChatResponse:
     prompt = build_chat_prompt(payload.message)
-    response_text = claude_client.complete(prompt)
+    response_text = claude_client.complete(prompt, history=payload.history)
     return ChatResponse(response=response_text)
 
 

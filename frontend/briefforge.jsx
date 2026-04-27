@@ -6,6 +6,7 @@ const API_BASE_URL = "http://localhost:8006";
 
 export default function BriefForge() {
   const [input, setInput] = useState("");
+  const [chatHistory, setChatHistory] = useState([]);
   const [chatResult, setChatResult] = useState("");
   const [briefResult, setBriefResult] = useState(null);
   const [markdownResult, setMarkdownResult] = useState("");
@@ -30,8 +31,16 @@ export default function BriefForge() {
     setLoading(true);
     setError("");
     try {
-      const data = await runRequest("/chat", { message: input });
+      const data = await runRequest("/chat", {
+        message: input,
+        history: chatHistory,
+      });
       setChatResult(data.response);
+      setChatHistory((prev) => [
+        ...prev,
+        { role: "user", content: input },
+        { role: "assistant", content: data.response },
+      ]);
     } catch (err) {
       setError(err.message);
     } finally {

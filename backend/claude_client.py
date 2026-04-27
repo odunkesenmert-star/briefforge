@@ -3,7 +3,7 @@ Thin Claude client wrapper used by FastAPI endpoints.
 """
 
 import os
-from typing import Optional
+from typing import Dict, List, Optional
 
 from anthropic import Anthropic
 
@@ -14,7 +14,12 @@ class ClaudeClient:
         self.model = model or os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-latest")
         self.client = Anthropic(api_key=self.api_key) if self.api_key else None
 
-    def complete(self, prompt: str, max_tokens: int = 1200) -> str:
+    def complete(
+        self,
+        prompt: str,
+        max_tokens: int = 1200,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> str:
         """
         Execute a Claude completion; falls back to deterministic placeholder
         if API key is not configured so local development can proceed.
@@ -26,10 +31,19 @@ class ClaudeClient:
                 f"Prompt preview:\n{prompt[:400]}"
             )
 
+        conversation_history = history or []
+        normalized_history = []
+        for item in conversation_history:
+            role = item.get("role", "").strip().lower()
+            content = item.get("content", "")
+            if role not in {"user", "assistant"}:
+                continue
+            normalized_history.append({"role": role, "content": content})
+
         response = self.client.messages.create(
             model=self.model,
             max_tokens=max_tokens,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[*normalized_history, {"role": "user", "content": prompt}],
         )
 
         parts = []
