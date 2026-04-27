@@ -1,6 +1,8 @@
+"use client";
+
 import React, { useState } from "react";
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://localhost:8006";
 
 export default function BriefForge() {
   const [input, setInput] = useState("");
