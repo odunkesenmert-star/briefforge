@@ -1,4 +1,6 @@
 import os
+import re
+import json
 from typing import Any, Dict
 
 from dotenv import load_dotenv
@@ -7,8 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from claude_client import ClaudeClient
-from json_utils import parse_json_response, safe_json_dumps
+from json_utils import safe_json_dumps
 from prompts import build_chat_prompt, build_extract_prompt, build_markdown_prompt
+from rules import SHEET_METAL_RULES
 
 load_dotenv()
 
@@ -33,6 +36,15 @@ app.add_middleware(
 )
 
 claude_client = ClaudeClient()
+SUPPORTED_MATERIALS = sorted(SHEET_METAL_RULES.get("minimum_bend_radius", {}).keys())
+
+
+def detect_materials(user_message: str) -> list[str]:
+    detected = []
+    for material in SUPPORTED_MATERIALS:
+        if re.search(rf"\b{re.escape(material)}\b", user_message, flags=re.IGNORECASE):
+            detected.append(material)
+    return detected
 
 
 class ChatRequest(BaseModel):
@@ -67,7 +79,14 @@ def health() -> Dict[str, str]:
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest) -> ChatResponse:
+    detected_materials = detect_materials(payload.message)
     prompt = build_chat_prompt(payload.message)
+    if detected_materials:
+        prompt += (
+            "\n\nDETECTED MATERIALS:\n"
+            + ", ".join(detected_materials)
+            + "\nUse matching entries from the sheet metal rule engine for all calculations."
+        )
     response_text = claude_client.complete(prompt, history=payload.history)
     return ChatResponse(response=response_text)
 
@@ -76,8 +95,11 @@ def chat(payload: ChatRequest) -> ChatResponse:
 def extract_brief(payload: ExtractBriefRequest) -> ExtractBriefResponse:
     prompt = build_extract_prompt(payload.text)
     response_text = claude_client.complete(prompt)
+    print("[BriefForge] /extract-brief raw Claude response:")
+    print(response_text)
     try:
-        brief = parse_json_response(response_text)
+        cleaned_response = re.sub(r"^```(?:json)?\s*|\s*```$", "", response_text.strip(), flags=re.IGNORECASE)
+        brief = json.loads(cleaned_response)
     except Exception as exc:
         raise HTTPException(
             status_code=502,

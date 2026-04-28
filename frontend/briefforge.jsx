@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const API_BASE_URL = "http://localhost:8006";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8007";
 
 export default function BriefForge() {
   const [input, setInput] = useState("");
@@ -12,11 +12,14 @@ export default function BriefForge() {
   const [briefResult, setBriefResult] = useState(null);
   const [markdownResult, setMarkdownResult] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSendingChat, setIsSendingChat] = useState(false);
+  const [isGeneratingMd, setIsGeneratingMd] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("extract");
   const [copiedMessageKey, setCopiedMessageKey] = useState("");
 
   async function runRequest(path, body) {
+    console.info(`[BriefForge] Request start: ${path}`, body);
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -25,13 +28,21 @@ export default function BriefForge() {
 
     if (!response.ok) {
       const details = await response.text();
+      console.error(`[BriefForge] Request failed: ${path}`, { status: response.status, details });
       throw new Error(`Request failed (${response.status}): ${details}`);
     }
-    return response.json();
+    const data = await response.json();
+    console.info(`[BriefForge] Request success: ${path}`, data);
+    return data;
   }
 
-  async function handleChat() {
+  async function handleSendChat() {
+    console.log("[BriefForge] handleSendChat:start", {
+      inputLength: input.trim().length,
+      historyLength: chatHistory.length,
+    });
     setLoading(true);
+    setIsSendingChat(true);
     setError("");
     try {
       const data = await runRequest("/chat", {
@@ -44,9 +55,13 @@ export default function BriefForge() {
         { role: "assistant", content: data.response },
       ]);
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : "Send Chat failed.");
     } finally {
       setLoading(false);
+      setIsSendingChat(false);
+      console.log("[BriefForge] handleSendChat:end", {
+        loadingEnded: true,
+      });
     }
   }
 
@@ -71,15 +86,17 @@ export default function BriefForge() {
     }
 
     setLoading(true);
+    setIsGeneratingMd(true);
     setError("");
     try {
       const data = await runRequest("/generate-md", { brief: briefResult });
       setMarkdownResult(data.markdown);
       setActiveTab("markdown");
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : "Generate MD failed.");
     } finally {
       setLoading(false);
+      setIsGeneratingMd(false);
     }
   }
 
@@ -240,30 +257,30 @@ export default function BriefForge() {
               }}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste product requirements, customer notes, or rough brief..."
+              placeholder="S235, S355, Al6061, DX51D, Al5083, S304 desteklenir"
             />
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button
                 disabled={loading || !input.trim()}
-                onClick={handleChat}
+                onClick={handleSendChat}
                 style={actionButtonStyle}
               >
-                Send Chat
+                {isSendingChat ? "Sending..." : "Send Chat"}
               </button>
               <button
-                disabled={loading || !input.trim()}
+                disabled={loading}
                 onClick={handleExtract}
                 style={actionButtonStyle}
               >
                 Extract Brief
               </button>
               <button
-                disabled={loading || !briefResult}
+                disabled={loading}
                 onClick={handleGenerateMarkdown}
                 style={actionButtonStyle}
               >
-                Generate MD
+                {isGeneratingMd ? "Generating..." : "Generate MD"}
               </button>
             </div>
             {error ? <p style={{ color: "#f87171", marginBottom: 0 }}>{error}</p> : null}

@@ -32,6 +32,7 @@ def build_extract_prompt(raw_text: str) -> str:
     return f"""
 SYSTEM RULES:
 {SYSTEM_RULES}
+YOU MUST RETURN ONLY VALID JSON. NO TEXT BEFORE OR AFTER. NO MARKDOWN FENCES.
 
 SHEET METAL RULE ENGINE (JSON):
 {SHEET_METAL_RULES_JSON}
@@ -45,7 +46,7 @@ While extracting, evaluate constraints with the rule engine.
 INPUT:
 {raw_text}
 
-Return JSON only.
+Return only plain JSON. Do not add explanations, headings, or markdown code blocks.
 """.strip()
 
 
